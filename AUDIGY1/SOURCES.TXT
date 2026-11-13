@@ -2,7 +2,7 @@ AUDIGY1 source provenance
 ========================
 
 Audigy 2.0 includes the confirmed Audigy 1 MIDI and SoundFont changes.
-The shared OPL3 and SoundFont source directories are ..\Core and ..\SFCORE.
+The shared OPL3 and SoundFont source directories are ..\FMCORE and ..\SFCORE.
 
 AUD1POLY lets a new attack replace an old pedal-held voice at
 the voice limit when free and releasing slots are exhausted.
@@ -54,8 +54,8 @@ OPLREND.INC replaces the cooperative worker with bounded direct rendering
 on the existing Audigy multimedia timer. The supplied OPLCORE.DLL is a
 new Open Watcom Win16 build with integer runtime pitch/modulation,
 precomputed initialization tables, a saved silent reset image, and a
-private interrupt stack. Sources and BUILD.BAT are in ..\Core. The DOSBox
-DBOPL engine and Fat Man instruments are retained. See ..\Core\UPSTREAM.TXT
+private interrupt stack. Sources and BUILD.BAT are in ..\FMCORE. The DOSBox
+DBOPL engine and Fat Man instruments are retained. See ..\FMCORE\UPSTREAM.TXT
 and the separate notices there for their original provenance.
 
 The private PCM path builds on the Audigy 1 Bass Cutoff mixer source.

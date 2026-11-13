@@ -165,14 +165,14 @@ environment initialized, run the following.
 
 ```bat
 SET INCLUDE=%WATCOM%\h;%WATCOM%\h\win
-CD Core
+CD FMCORE
 BUILD.BAT
 CD ..\SFCORE
 BUILD.BAT
 CD ..
 ```
 
-Copy `Core\OPLCORE.DLL` and `SFCORE\SFCORE.DLL` to the installation package
+Copy `FMCORE\OPLCORE.DLL` and `SFCORE\SFCORE.DLL` to the installation package
 with the Delphi binaries. Python 3 is needed only to regenerate the
 included `SFTABLE.H` with `SFCORE\MKTABLES.PY`.
 
@@ -197,7 +197,7 @@ the full changelog. The Win16 installer's **Readme** button opens that file.
 The project-authored driver code is available under the
 [GNU General Public License, version 2](LICENSE). Existing third-party
 copyright and license notices apply to the corresponding components,
-including [the OPL3 core](Core/UPSTREAM.TXT),
+including [the OPL3 core](FMCORE/UPSTREAM.TXT),
 [TinySoundFont](SFCORE/TSF16.H), and the
 [installer](SETUP/SOURCE.TXT). See the
 [Audigy 1](AUDIGY1/SOURCES.TXT) and [Audigy 2](AUDIGY2/SOURCES.TXT)

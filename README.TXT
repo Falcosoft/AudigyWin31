@@ -319,13 +319,13 @@ headers and the Win16 SDK headers. In a DOS/Windows command prompt use
 
 From the extracted package root, build each core from its own directory.
 
-  CD Core
+  CD FMCORE
   BUILD.BAT
   CD ..\SFCORE
   BUILD.BAT
   CD ..
 
-The scripts produce Core\OPLCORE.DLL and SFCORE\SFCORE.DLL. Copy
+The scripts produce FMCORE\OPLCORE.DLL and SFCORE\SFCORE.DLL. Copy
 both DLLs beside SETUP.EXE and the built driver DLLs when packaging
 the release. SFCORE uses the included SFTABLE.H. Python 3 is only
 needed to regenerate that header with MKTABLES.PY.

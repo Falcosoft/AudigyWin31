@@ -2,12 +2,12 @@ AUDIGY2 source provenance
 ========================
 
 Audigy 2.0 includes the confirmed Audigy 1 MIDI and SoundFont changes.
-The shared OPL3 and SoundFont source directories are ..\Core and ..\SFCORE.
+The shared OPL3 and SoundFont source directories are ..\FMCORE and ..\SFCORE.
 The Audigy 2/ZS hardware backend and Aud2Gain remain card-specific.
 
 This test ports the tested AUDOPLRV MIDI and FM mixer paths to the
 Audigy 2/ZS AUDBCUT baseline. The same OPLCORE.DLL and its corresponding
-sources are included unchanged. See ..\Core\UPSTREAM.TXT for their notices.
+sources are included unchanged. See ..\FMCORE\UPSTREAM.TXT for their notices.
 AUD2BRD, AUD2REG and the startup gain parser are preserved. DSP edits
 add the FM stereo pair and the same capture, bass and shared reverb
 routing as AUDOPLRV; the Audigy 2 companion and input setup are retained.
