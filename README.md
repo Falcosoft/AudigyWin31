@@ -137,6 +137,17 @@ current SF2 implementation. The Audigy hardware reverb is available to both
 synths. Both also retry playback after repeated PCM starvation, which can
 occur during disk activity on PIO systems.
 
+### Tested SoundFonts
+
+The SF2 synth is based on [TinySoundFont](SFCORE/TSF16.H) and supports a
+subset of SoundFont features. I tested it extensively with these two banks:
+
+1. **Reality_GMGS_falcomod.sf2** is about 32 MB. I recommend it for systems
+   with at least 64 MB of RAM available to Windows 3.1x.
+   [Download Reality GMGS FalcoMod](https://falcosoft.hu/reality_gmgs_falcomod.zip).
+2. **Creative's 4GMGSMT.SF2** is only 4 MB. It includes GS and MT-32
+   variation tones and sounds quite good for its size.
+
 ## Build from source
 
 ### Drivers, installer and mixer
