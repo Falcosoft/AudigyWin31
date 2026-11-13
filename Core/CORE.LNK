@@ -1,0 +1,7 @@
+system windows_dll
+option map,version=3.1
+option description 'Audigy OPL3 integer timer core 1'
+name OPLCORE.DLL
+file OPLCORE.OBJ,FMCORE.OBJ,OPLSYN.OBJ,DBADAPT.OBJ,DBOPL.OBJ
+library windows,clibl,plibl,noemu87,math87l
+segment type code fixed preload, type data fixed preload

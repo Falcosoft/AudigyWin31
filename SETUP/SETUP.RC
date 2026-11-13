@@ -1,0 +1,2 @@
+/* Win16 resource script: do not use a Win32-format .RES. */
+MAINICON ICON "SETUP.ICO"

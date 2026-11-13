@@ -1,0 +1,69 @@
+Audigy Setup 2.0 installs the shared OPLCORE.DLL and SFCORE.DLL
+through the same staged copy and rollback path as the driver.
+It adds a MIDI alias while preserving the existing WinMM registrations.
+
+Standalone installer source notes
+================================
+
+SETUP.DPR and its units implement only installation. They do not load
+AUDIGY1/AUDIGY2, call WinMM device APIs, initialize the card or map physical RAM.
+The audio drivers retain their ordinary DRV_INSTALL/DRV_REMOVE success hooks.
+
+SPCI.PAS uses a read-only subset of the driver's PCI.PAS (see PCILIC.TXT).
+The PCI BIOS Find Device status distinguishes end-of-list ($86) from an
+inconclusive probe. The driver-style PCI ID, revision, BAR0 and subsystem
+checks only affect the initial selection and the warning. No PCI writes.
+https://fd.lod.bz/rbil/interrup/bios_expansion/1ab102.html
+
+The hardware warning uses Win16 WM_CTLCOLOR for its static control only:
+https://learn.microsoft.com/en-us/windows/win32/devnotes/wm-ctlcolor-
+
+New installer code and original pixel icon: dedicated under 0BSD below.
+The driver and retained source notices have their own licenses; this notice
+does not relicense them or the Microsoft mixer extension.
+
+Copyright (c) 2026 Audigy Windows 3.1 driver contributors
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+
+Primary interface references used (no third-party RAM detector source copied):
+https://uefi.org/specs/ACPI/6.5/15_System_Address_Map_Interfaces.html
+https://www.delorie.com/djgpp/doc/dpmi/api/310300.html
+https://github.com/torvalds/linux/blob/master/arch/x86/boot/memory.c
+
+Windows-managed RAM: native Delphi1 ToolHelp unit, TMemManInfo and pointer
+argument MemManInfo(@Info). MEMMANINFO dwTotalPages and wPageSize are documented
+in Microsoft Windows3.1 Programmer's Reference, Volume3 (1992), pp317-318.
+Only enhanced-mode totals are used. GlobalMemoryStatus/Win32s are not used.
+https://www.bitsavers.org/pdf/microsoft/windows_3.1/Windows_3.1_Programmers_Reference_Volume_3_Messages_Structures_and_Macros_1992.pdf
+
+Win3.1 profile-cache invalidation reference: Microsoft SDK KB Q68827.
+https://jeffpar.github.io/kbarchive/kb/068/Q68827/
+
+Program Manager shortcut: native Delphi1 DDEML unit, TCallback and existing
+MakeProcInstance pattern. API usage checked against Borland TI1177D, Delphi1
+(Embarcadero archive). This installer does not include the demonstration's
+forms, application code or data logic:
+https://blogs.embarcadero.com/dde-a-simple-example/
+Command syntax: Microsoft Windows3.1 SDK Programmer's Reference, Vol1, chapter17.
+Group/item request format: Microsoft KB Q102575.
+https://jeffpar.github.io/kbarchive/kb/102/Q102575/
+
+Known local HDA2 Test20 coexistence check mirrors HDA.PAS/DRVPRC.PAS values:
+aPCIHI:LO default $0800:$0000, 2 x 64 KiB mapping;
+myPCIHI:LO default $0810:$0000, 5 x 64 KiB mapping.
+Inconsistent PCI/HI/LO keys or active HDA TSR reservations are refused.
+This is not a generic detector of every historical HDA2 build or TSR.
+
+Resources: SETUP.RES is the ANSI Win16 resource format, not Win32. MAINICON
+contains two 4bpp DIB images. Use the included resource or rebuild it with
+Delphi 1's Win16 BRCC and SETUP.RC.

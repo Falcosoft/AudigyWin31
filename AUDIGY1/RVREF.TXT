@@ -1,0 +1,100 @@
+Reverb version 1.3 - source provenance and engineering limits
+=======================================================
+
+Baseline is the user-confirmed Audigy1 1.2 EQ Test2. Exact rollback EQBASE.ZIP:
+abd94356abf268393892cd883dfa9df30bed584b6ad0b33867ed459629a38c0d
+Keep the user's compiled working DLL and INI separately; this contains source.
+
+Adapted kX Reverb Lite by Max Mikhailov and Eugene Gavrilov,2001-2005.
+GPL version2 or later; no warranty. Retain the authors' original notices.
+Repository https://github.com/kxproject/kx-audio-driver
+Pinned commit19d1e856533e475b702121c42fd9463855808947.
+REF/REVERBLT.CPP is kxfxlib/da_reverblt.cpp,
+ blob4f92ab405c1e3a932516eba6f454004da9fc0723.
+REF/RVCTRL.CPP is kxfxlib/reverblt.cpp,
+ blob68ac40ce86e577094e8e7f30f23a8fe2b54755d9.
+REF/KXDSP.CPP is driver/dsp.cpp,
+ blob5752cb8bf75d15a7c34638dc9c750907b0e02426.
+COPYING.TXT supplies GPL2. Prior provenance/licensing notices remain; this
+addition does not resolve outstanding permissions for unrelated old sources.
+
+All77 DSP instructions and29 initial GPR values are retained with only
+operand relocation. Fifty TRAM taps:22internal,28external. Internal2943
+samples, external62590 compressed samples;128 KiB host RAM supplies65536
+external samples. Delay allocation is at PhysicalBase+20000h, NOT linearBase.
+Playback/capture bytes0..1CFFFh stay in their original locations. The single
+DPMI mapping extends to40000h. Four temporary32KiB selectors zero external
+RAM and are freed before initialization proceeds.
+
+Reverb program uses slots500..576; input/shadow444..449; returns580..591.
+EQ instructions/state remain unchanged. GPR520/521 inputs,522wetgain,
+523..526dry shadow,529rearwetgain,52Asendgain;52B..52Escaled wet scratch;
+540..55C relocated kX GPRs.
+No overlap with EQ440..471/480..51F or capture/monitor408..425.
+Captureslots8/9 and all native input queue/copy/format helpers are unchanged.
+
+TRAM control follows kX read+clear/write opcodes, address shift11 and DBAC
+reset bit40000000h. Alignment formulae use actual installed instruction
+position500+first use and tap index. This physical-placement adjustment is
+not verified on hardware. Do not mix in ALSA's differently encoded ioctl
+TRAM address format without first resolving units/control differences.
+The host model validates logical delays and feedback, not physical cache
+phase, compression, or the clear/reset behavior of the actual controller.
+
+Initialization mutes/locks caches, halts DSP and disables stale TRAM controls
+before replacing base/size/taps. External TCB base/size have startup readbacks.
+Shutdown halts DSP, locks caches and disables PCI bus mastering before
+detaching TCB/PTB and unmapping. Existing multimedia-timer lifecycle unchanged.
+
+Reverb is wet-additive after EQ. The shared stereo input includes both Wave
+streams and FM at their volumes before the Front/Rear faders, plus the
+input monitor. It uses the same EQ coefficients as the listening outputs,
+with separate filter histories. A single level scales all four returns.
+The Front/Rear faders affect only the dry speaker signal. Recording stays
+pre-volume, pre-fader and pre-effects.
+Test3 first scales each wet return by0.4*Level/100, then uses integer MACINTS
+with Audigy constantC4=4 to add dry+4*scaled wet with final saturation.
+It avoids clipping a boosted wet intermediate before the level control.
+The MaxWetGain cap33333333h limits the existing4x stage to1.6x maximum.
+New25/50/75/100 map to Test2 return levels10/20/30/40, within Q31 rounding.
+Default50 has Test2 level20 return strength. Existing INI values are kept.
+Preset changes also affect actual loudness. Dry gain is unchanged. There is
+no limiter/automatic normalization: loud dry+wet sums can still saturate.
+Each original preset coefficient is the arithmetic midpoint of Test1 and Test2,
+rounded down by at most half a Q31 unit, not a perceptual/time interpolation.
+Room: decay0.235, diffusion0.399609375, late balance0.3125.
+Hall: decay0.515, diffusion0.44921875, late balance0.74375.
+Plate: decay0.40, diffusion0.54453125, late balance0.825.
+Chamber: decay0.3175, diffusion0.4720703125, late balance0.56875; its
+coefficients are midpoints of the current Room and Plate. In the ideal
+model its1..4second tail energy is between those two, not near Hall.
+The original3 presets, send/return range, default50 and DSP stay unchanged.
+Persistent IDs0Room/1Hall/2Plate/3Chamber; display order0/3/2/1. UI maps both
+directions explicitly. Configuration validation/hardware accept ID3.
+Panel version text is now simply1.3; numeric version0103 unchanged.
+These are coefficients, NOT decay times in seconds. Delay lengths, TRAM
+flags, allocation, feedback topology and original77 instructions unchanged.
+The same kX algorithm is used for all4 named parameter presets; these are
+not a Creative EAX API or distinct physical-room/plate simulation engines.
+Enable/level/preset changes use bounded resident integer writes under Busy.
+No delay-RAM clearing or allocation occurs in the timer. State/tails are
+retained across parameter changes. Disabled send/wet gains are0; the DSP
+continues servicing its delay lines in the background.
+
+CHECKRV.PY checks relocation, memory bounds, code/register disjointness,
+unchanged core sources/ABI/lifecycle, source-derived exact wet0 routing,
+old EQ models and8second impulse runs for all4 presets with2 idealized
+read-clear assumptions. It needs Python/NumPy/gcc; RVPROBE.C is host-only.
+Test1 was compiled and hardware-tested by the user: reverb worked but was
+too subtle even at100. User confirmed Test2 works but is too strong, with
+useful levels10..30 and excessive effect above50, especially Hall/Plate.
+User confirmed Test3 is much better, but Plate is perceptually close to Hall
+and a middle preset is missing. This Chamber addition is hardware-pending.
+The host probe now uses correct Audigy ROM constants CC=20000000,
+CD=40000000,CE=80000000,D4=5A7EF9DB. The Test1 probe incorrectly assigned
+values to those constants; actual driver operand relocation was correct and
+is unchanged. Re-running with hardware values and source-derived presets
+confirms decaying tails in the ideal model. Actual bus phase/compression
+remain outside the model. Return scaling tests exercise the real source
+instructions across all101levels*101rear percentages, signed extremes and
+final saturation. EQ/capture/timer/core lifecycle remain unchanged.

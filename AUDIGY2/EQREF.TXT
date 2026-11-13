@@ -1,0 +1,52 @@
+Equalizer Test 2 - engineering notes
+===================================
+
+Independent implementation of the peaking-EQ mathematical equations in
+Robert Bristow-Johnson's Audio EQ Cookbook, published as a W3C Note:
+https://www.w3.org/TR/audio-eq-cookbook/
+No kX effect source or microcode was copied into this test.
+Existing project provenance/license notices remain applicable.
+
+10 bands: exact centers31.25*2^n Hz, n=0..9, fixed Q=sqrt(2).
+The hardware DSP runs at48kHz regardless of the WaveOut client's rate.
+Q2.30 coefficients are built in task context. MAC2 wrapping partial sums
+followed by ACC3 doubling implement DF-I. Four independent channel histories
+filter front L/R and rear L/R. Shared coefficients, independent sample states.
+No signal-processing math or FPU instructions execute on the CPU audio IRQ.
+204 coefficient bytes are published through the existing Busy/config gate.
+
+Original instructions0..15 remain byte-for-byte unchanged, including native
+capture8/9 and physical monitoring10..13. Extra16/17 compute dry rear samples
+using cached438/439 for the previous frame's monitor, as in the original
+rear outputs. Extra18/19 cache the current rear monitor for the next frame.
+EQ uses32..435.
+Final INTERP outputs436..443 use gate436=0 for exact dry bypass. No output
+register is read. Registers426/427,430..436,438/439,440..471,480..51F are reserved
+for this addition. No host DMA RAM or interrupt/timer geometry changes.
+
+DSP coefficient changes are committed under Busy by AudEqApply. It briefly
+halts the DSP with the same A_DBG control used during startup, uploads the
+coefficients, resets histories, sets the bypass gate, then resumes. This is
+bounded I/O with no waits, formatting, allocations, GUI or INI calls. A click
+or momentary interruption can occur when applying EQ, including in a
+simultaneous recording. Steady-state recording routes are unprocessed.
+This first test does not claim click-free coefficient morphing.
+
+Preamp is applied before the filters. Bands can clip individually if boosts
+exceed available headroom. It is not a limiter or automatic gain control.
+Reduce preamp for boosted presets; for aggressive stacked boosts use cuts
+instead or lower source level. Full-scale arbitrary boosted input is not
+guaranteed clean. EQ after a saturated dry mix cannot undo earlier clipping.
+
+The EQ window uses native USER scrollbars, not VCL/COMCTL trackbars.
+Apply submits the displayed settings (including other pending setup edits),
+then waits asynchronously for the existing parent configuration completion.
+Success leaves EQ open. OK closes only after success. Failure leaves it open
+for retry. Cancel/X discard unapplied edits, not previously applied changes.
+While pending, controls are disabled; X requests closure after completion.
+The existing parent's100ms timer wakes the nested dialog message loop. There
+is no new timer or busy wait. Only two Pascal sources changed from Test1.
+
+Host validation checks source-derived DSP instructions, coefficients, bypass,
+four-channel independence, filter response/poles and unchanged recording/
+lifecycle sections. It is NOT native Delphi1 or physical Audigy execution.

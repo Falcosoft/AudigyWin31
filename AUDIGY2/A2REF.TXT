@@ -1,0 +1,114 @@
+Audigy 2/ZS hardware port - engineering notes
+============================================
+
+Aud2Gain addition - 30 October 2026
+----------------------------------
+The first Audigy2 driver is now user-confirmed for playback, Wave recording,
+Line-In and Mic recording/monitoring. Digital and other physical inputs
+remain individually untested. AUD2BASE.ZIP preserves that exact package:
+SHA256 5bd5de39a854d2fd8e01739120a20570e9427fa0bcf6bb6af6a3411f1a8b0833
+
+The final hardware-tested LMP gain reference, LMP_Audigy2_ZS_gain_r6.zip,
+is retained as REF/LMPA2GN.ZIP. Its source/AUDIGY2.S implements 0..12 dB
+in 0.25-dB steps, not negative gain. For N quarter-dB steps, each byte of
+PTR2 63..66 is 48-N, replicated four times. Examples: 0dB=30303030,
+6dB=18181818, 6.25dB=17171717, 12dB=00000000. These are hardware volume
+codes, not linear DSP coefficients. All four DSP-to-SRCMulti paths retain
+the same channel balance. P16V DMA and its unrelated input paths stay off.
+
+AUD2GAIN.INC shares integer gain parsing/formatting between INI load and UI.
+Aud2GainSteps stores 0..48; default/missing/invalid values use zero. Values
+must be exact quarter-dB steps and use '.' for fractions. Only startup
+CompanionConfigure writes these gain registers; no live timer/API/GUI
+hardware mutation was added. TAudSettings.GainSteps is validated, compared
+as restart-required and saved via ConfigSave using locale-independent text.
+The control panel's right-hand edit displays LastSaved, while ActiveSettings
+and hardware retain the current-session gain until the next Windows start.
+ApplyConfigIRQ deliberately does NOT copy the restart-only GainSteps field.
+Final hardware output gain includes PCM, monitoring, EQ and reverb, but
+is downstream of capture taps, so recording levels are unchanged.
+No DSP instructions, ring geometry, queues, timers or input routing changed.
+Aud2Gain=0 writes the exact original 30303030 to all four gain registers.
+The following R1 audit is historical; its fixed-unity statements describe
+the default, now configurable by Aud2Gain. New gain needs Windows testing.
+
+Baseline: exact user-confirmed Audigy 1 v1.3, with WaveIn/full duplex,
+physical monitoring, Wave recording, ten-band EQ and four reverb presets.
+AUD1BASE.ZIP SHA256:
+4d6b3a6f04379cbb565a72395ee416a1242ac0c6db186ca31f805cbfacc20d8c
+The Windows queues, callbacks, timer residency, cached volume protocol,
+configuration persistence and shutdown workaround are unchanged except names.
+EQ/reverb code, DSP program, voice engine, ring geometry and memory map
+are unchanged. No AUDTICK, P16V DMA buffers or new Windows imports were added.
+
+Hardware-confirmed playback reference: REF/LMPA2R1.ZIP, originally
+LMP_Audigy2_ZS_test_r1.zip, source/AUDIGY2.S. The user confirmed that DOS
+port worked on the first real Audigy 2 ZS run; this is not yet a Windows
+driver hardware result. Register values follow this R1, not later LMP
+gain experiments: SRCMulti gains 30303030 mean explicit 0 dB/unity.
+
+AUD2BRD.INC is included in the existing resident hardware code segment.
+The PTR2 index/data pair uses I/O+20/+24, with original FLAGS restored
+after each atomic pair, just like the existing primary pointer helpers.
+PCI 1102:0004 revision 04 is required BEFORE companion port access.
+Known E-MU 400x subsystem-family boards are excluded; ordinary consumer
+Audigy 2/ZS is not restricted to the user's particular subsystem ID.
+
+Initialization stops bus mastering before preparing RAM; masks INTE2/3;
+stops every P16V playback/capture stream (PTR2 40=0); disables HCFG2;
+mutes GPO6 using WORD GPIO=(old AND FFBB). Existing EMU voice/ADC state
+is initialized. Primary EHC 76 bits E00 become 400, preserving others.
+PTR2: 60=14, 6E=FF00FF00, 63..66=30303030, 6F=000100FF,
+HCFG2 I/O+34=00000201, PTR2 16=000078E4. P16V DMA stays zero.
+Bus mastering is enabled after streams/routing are configured and before
+DSP external reverb TRAM access. Audio enable and final GPO6=0040 follow
+DSP initialization. Cleanup disables companion interrupts/DMA/interface,
+mutes GPO6 and retains existing EMU/PCI/PTB/TRAM/mapping teardown ordering.
+HCFG2=201 enables the companion interface, NOT P16V DMA.
+
+Capture/monitor audit
+---------------------
+Primary sources checked: Linux ALSA v6.12 and kX at the pinned commit below.
+Ordinary classic Audigy 2/ZS uses the same EMU16 capture engine as Audigy 1:
+ADCBA 46 contiguous physical byte address, ADCBS 4A (1B=32 KiB),
+ADCCR 42 (left/right 10/20), A_ADCIDX 63 byte cursor. Rates 48/44.1/32/
+24/22.05/16/11.025/8 kHz use codes 0/1/2/3/4/5/7/8 respectively.
+The distinct P16V high-resolution engine is unnecessary for 16-bit capture.
+No 24-bit/96-kHz or extended surround support is claimed by this port.
+
+DSP inputs remain: AC97 Mic 40/41, CD Digital 42/43, Drive optical SPDIF
+44/45, Philips analog ADC 4A/4B. AC97 mixer isolation selects Line/CD/Aux
+feeding that ADC. Capture outputs remain 76/77. Wave selects raw FX0/1,
+before playback volume/effects, with monitoring disabled to prevent feedback.
+Monitoring mixes the selected physical DSP input into the unchanged output
+program; recording and monitor gains remain independent.
+
+Two source-specific adjustments beyond LMP's playback-only patch:
+- HCFG=270 before audio enable preserves old 210 and enables all three
+  I2S input ASRC bits 10/20/40, as kX p16v_init does. This supplies the
+  regular DSP physical-input paths without starting P16V recording DMA.
+- CD Digital and optical SPDIF no longer wait for, save or program AC97.
+  Their direct DSP routes do not require codec readiness. Analog sources
+  retain the established codec save/restore/ownership logic.
+These are source-backed adaptations, not hardware-verified recording claims.
+Audigy 2 Platinum EX / unusual codec configurations remain unverified.
+
+Pinned reference files in REF
+----------------------------
+https://github.com/torvalds/linux/tree/v6.12/sound/pci/emu10k1
+EMUMAIN.C  emu10k1_main.c  5b8a5ba825bdb2555cec7a13def744b062b50fa5
+EMUPCM.C   emupcm.c        1bf6e3d652f81448a563edc9c930b84eadcef5f0
+EMUMIX.C   emumixer.c      05b98d9b547b2a9ffd063649311887693b1b20de
+EMUFX.C    emufx.c         03efc317e05f78d67d2ec9ce12c9e087a0bd05e2
+EMU10K1.H  include/sound/emu10k1.h
+  38db50b280eba5ad72100a0a44798d6ca2d5db75
+EMUFAPI.H  include/uapi/sound/emu10k1.h
+  4c32a116e7add4a6a6808516a1d20ab1703ad553
+https://github.com/kxproject/kx-audio-driver
+Commit 19d1e856533e475b702121c42fd9463855808947
+KXP16V.CPP driver/p16v.cpp blob 0be55bb80d5c5f3c9019dc7f7d9902376373a696
+
+Original reference notices are retained. Existing SOURCES/CAPREF/EQREF/
+RVREF/PCILIC/COPYING documents describe inherited provenance and historical
+Audigy 1 work; this file describes the new Audigy 2 delta. Including GPL
+texts/references does not resolve any pre-existing whole-project permissions.

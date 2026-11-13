@@ -1,0 +1,112 @@
+AUDIGY2 source provenance
+========================
+
+Audigy 2.0 includes the confirmed Audigy 1 MIDI and SoundFont changes.
+The shared OPL3 and SoundFont source directories are ..\Core and ..\SFCORE.
+The Audigy 2/ZS hardware backend and Aud2Gain remain card-specific.
+
+This test ports the tested AUDOPLRV MIDI and FM mixer paths to the
+Audigy 2/ZS AUDBCUT baseline. The same OPLCORE.DLL and its corresponding
+sources are included unchanged. See ..\Core\UPSTREAM.TXT for their notices.
+AUD2BRD, AUD2REG and the startup gain parser are preserved. DSP edits
+add the FM stereo pair and the same capture, bass and shared reverb
+routing as AUDOPLRV; the Audigy 2 companion and input setup are retained.
+
+Version 1.4 adds the existing Audigy 1 Win16 mixer facade, unchanged except
+for its Audigy 2/ZS device name and preservation of saved startup Aud2Gain.
+MXSTATE.INC and MXTYPES.PAS are identical to Audigy 1 v1.4. Existing hardware,
+recording, DSP, streaming and lifetime implementations remain unchanged.
+Microsoft MSMIXMGR.DLL is NOT included or relicensed. Existing notices below
+remain applicable; this does not establish whole-project license clearance.
+
+Audigy 2/ZS port: see A2REF.TXT for the exact LMP R1 board sequence and
+pinned ALSA/kX recording/monitoring audit. All original notices below are
+retained as inherited provenance/history; no new license clearance is implied.
+Aud2Gain additionally follows the hardware-confirmed LMP gain R6 source,
+included unchanged as REF/LMPA2GN.ZIP. See A2REF.TXT for the encoding.
+
+Reverb1.3 adds the GPL2-or-later kX Reverb Lite effect by Max Mikhailov
+and Eugene Gavrilov. See RVREF.TXT for pinned commit/blob identifiers and
+the included original files in REF. Earlier notices and unresolved source
+permissions remain applicable; this is not whole-project license clearance.
+
+This extends the user's AUD1IN2 capture backend and accepted AUD1DDL
+playback baseline. Earlier author/license notices remain applicable;
+this package is not a claim that whole-driver redistribution is cleared.
+
+Hardware playback reference:
+https://github.com/Baron-von-Riedesel/VSBHDA
+Commit99969b04f142ca297d24a92abcf0f43df04908df
+srcdrv/SBLIVE.C, EMU10K1.H and SC_SBGEN.H; Mpxplay/PDSoft Attila Padar,
+Creative Labs and ALSA origins. See the retained project source notices.
+COPYING.TXT contains GPL2 as supplied with the earlier development package.
+
+Capture hardware/routing references and original blob IDs are in CAPREF.TXT.
+Native ADC rate/channel additions follow ALSA emupcm.c and emu10k1.h:
+https://github.com/torvalds/linux/blob/master/sound/pci/emu10k1/emupcm.c
+https://github.com/torvalds/linux/blob/master/include/sound/emu10k1.h
+In particular, Audigy 11.025kHz and8kHz encodings are7 and8, not the
+SB Live! encodings. Mono enables the Audigy left ADC bit, stereo both bits.
+No software resampler was added. ALSA is GPL2-or-later and credits Jaroslav
+Kysela, Creative Labs, Lee Revell, James Courtier-Dutton and other authors
+identified in the existing CAPREF.TXT.
+
+Win16 WaveIn lifecycle/structures were checked against the user's exact
+MMSYSTEM.HLP (waveInOpen/AddBuffer/Stop/Reset/Close/GetPosition/WIM_DATA,
+WAVEINCAPS), MMSYSTEM.DCU-derived MMREF1.TXT and local Win16 MMDDK.PAS.
+The working HDA2 and Audigy1 waveOut architecture supplies the established
+Win16 callback, huge-pointer, generic preparation and resource-lifetime
+patterns. HDA2 does not supply a recording backend to copy wholesale.
+The new WaveIn interface is not the previous private recording-test API.
+
+PCI.PAS is the user's independently replaced five-function PCI BIOS module;
+it is unchanged by this package. Its0BSD license text is in PCILIC.TXT.
+This does not relicense HDA2/Watler code or resolve whole-project licensing.
+
+Configuration/live routing additions
+-----------------------------------
+Starts from the user-confirmed AUD1WIN version after its Delphi1 CASE fix.
+HDA2 DRVPRC.PAS's DRV_QUERYCONFIGURE/DRV_CONFIGURE pattern was inspected
+before implementation. The new UI uses the same standard driver hooks but
+native resource-free USER controls, rather than adding VCL/DFM initialization
+and application-lifetime objects to the audio driver.
+
+AUDCFG.PAS is task-only. Settings are published through short cached-state
+requests, applied by the existing resident service, then written to the INI
+from normal dialog context. No second multimedia event/private recording API.
+
+Digital capture input constants are verified against the project's pinned
+REF/EMU10K1.H and ALSA public definitions:
+ A_EXTIN_SPDIF_CD_L/R =02h/03h -> DSP inputs42h/43h
+ A_EXTIN_OPT_SPDIF_L/R=04h/05h -> DSP inputs44h/45h
+https://git.alsa-project.org/?p=alsa-lib.git;a=blob;f=include/sound/emu10k1.h
+https://www.kernel.org/doc/html/latest/sound/cards/audigy-mixer.html
+These refer to capture inputs, not playback S/PDIF output routing, and
+do not guarantee a connector/accessory is physically present on every card.
+
+Hardware monitoring / native AUX additions
+-----------------------------------------
+Based on user-confirmed AUD1SET version1; no WOUT mixer changes.
+Native AUX structures/functions verified using the supplied MMSYSTEM.DCU,
+MMSYSTEM.HLP and local MMDDK.PAS. HDA2 AUXMESSA.PAS supplied the standard
+entry-point/message reference, not its unfinished implementation/debug UI.
+The working cached WaveOut volume architecture supplies the concurrency pattern.
+Independent playback/capture DSP gains follow the existing MACS encoding and
+the ALSA Audigy architecture in emufx.c (GPL2-or-later), commit:
+906dde0f355bd97c080c215811ae7db1137c4af8
+https://kernel.googlesource.com/pub/scm/linux/kernel/git/torvalds/linux/
+File: sound/pci/emu10k1/emufx.c at that commit. Existing credits/licenses
+above and in CAPREF.TXT/COPYING.TXT remain applicable.
+Monitoring adds gain/sample GPRs, not a DMA engine, software resampler or VxD.
+
+AUD1MON2 paired instruction update
+---------------------------------
+User supplied EK2M v1.01 executable and v1.00 README were inspected as
+compatibility references only; no executable code or DSP image was copied.
+Executable SHA256:
+79fe02dd59f5ec81ab8fb2185c220a426a3dd4661763a843c62c4d5a5a33b8ab
+Its input table confirms CD digital42/43 and I2S1 Line-In4A/4B; its output
+table confirms analog front68/69 and rear6E/6F. Instruction writer writes
+both low and high words. The existing capture path does the same; monitor
+source-switch writes now follow that pattern. This is not proof that a
+paired-write hardware latch caused the reported silence.

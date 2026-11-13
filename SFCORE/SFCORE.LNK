@@ -1,0 +1,7 @@
+system windows_dll
+option map,version=3.10
+option description 'Audigy Win16 fixed-point SoundFont core'
+name SFCORE.DLL
+file SFIRQ.OBJ,SFLOAD.OBJ
+library windows,clibl,noemu87,math87l
+segment type code fixed preload, type data fixed preload

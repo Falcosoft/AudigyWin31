@@ -1,0 +1,11 @@
+# Preserve the original Win16 source and DOS batch file bytes across checkouts.
+*.PAS -text
+*.DPR -text
+*.INC -text
+*.BAT -text
+*.LNK -text
+README.TXT -text
+*.DFM binary
+*.RES binary
+*.ICO binary
+*.JPG binary

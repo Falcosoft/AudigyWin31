@@ -1,0 +1,111 @@
+Capture Test 1 references and scope
+=================================
+
+Primary implementation references retrieved 26 October 2026:
+https://github.com/torvalds/linux/blob/master/sound/pci/emu10k1/emupcm.c
+https://github.com/torvalds/linux/blob/master/sound/pci/emu10k1/emufx.c
+https://github.com/torvalds/linux/blob/master/sound/pci/emu10k1/emumixer.c
+https://github.com/torvalds/linux/blob/master/include/sound/emu10k1.h
+https://github.com/torvalds/linux/blob/master/include/uapi/sound/emu10k1.h
+https://www.kernel.org/doc/html/v6.3/sound/cards/audigy-mixer.html
+
+Git blob IDs of the files actually inspected, in the order above:
+b8749e0131adc34c52a009cc9cd21d2bcc5ac5db
+a33817aba17f1e47568f1fa1f389de2c62c15b0b
+f4906ab30c023edf8a6149659a3775c7ed80ad03
+6474239a11c1e782c0d109a0fb6075e74574aa82
+4c32a116e7add4a6a6808516a1d20ab1703ad553
+
+Linux source notices: GPL-2.0-or-later; copyright Jaroslav Kysela,
+Creative Labs, Inc.; PCM also credits Lee Revell, James Courtier-Dutton
+and Oswald Buddenhagen; FX code also credits Courtier-Dutton/Buddenhagen.
+These references do not establish licensing clearance for the entire
+pre-existing Windows driver. Its existing notices remain unchanged.
+
+Capture prepare/trigger/pointer observations:
+- ADCBA=$46 uses a contiguous physical DMA byte address, not playback PTB.
+- ADCBS=$4A value $1B selects 32768 bytes; zero stops capture.
+- ADCCR=$42 Audigy channel enables are $10/$20; 48 kHz rate code is zero.
+- A_ADCIDX=$63 is a byte cursor. SB Live! uses ADCIDX=$64 and different
+  channel-enable bits, while sharing the standard capture state machine.
+- ALSA waits about 50 us before its first cursor read. This test instead
+  waits until the next multimedia event; no new interrupt-time busy wait.
+- ALSA uses card interrupts for period notifications. This test leaves
+  INTE=0 and uses the already-working resident Win16 multimedia event.
+
+Audigy input-routing observations:
+- AC97 digitized mic enters DSP physical inputs $40/$41.
+- The Philips analog-mix ADC enters $4A/$4B; it can include Line/CD/Aux.
+- ADC capture outputs are $76/$77 in the public definitions and FX code.
+  The human-readable emufx.c output-name table has conflicting offsets;
+  this implementation follows the actual A_EXTOUT_ADC_CAP definitions
+  used by the DSP program, not that descriptive table.
+- Test selection isolates one analog contributor using codec mute controls,
+  or selects the distinct AC97 mic input. It does not route input to speakers.
+- Existing playback instructions 0..7 are unchanged. Capture inserts two
+  instructions into previously unused slots 8/9, controlled by GPRs 12/13.
+  New recording gain is independent of front/rear playback GPRs 8..11.
+
+Windows declarations follow the working uploaded Delphi1 project and its
+compiler-confirmed Win16 rules. The temporary CapBegin/CapQuery/CapEnd API
+is project-specific and is not represented as a Windows multimedia API.
+CAPAPI.PAS defines the common ABI; both projects must use BUILD ALL.
+
+No Delphi1 compiler, real Windows 3.11 capture or real Audigy recording
+is available in this environment. Source review and host models cannot
+validate the physical analog route or target compiler acceptance.
+
+Test 2 additions
+----------------
+The standard AC97 line/CD/Aux mixer control uses a 5-bit attenuation
+field with 1.5-dB steps and a nominal +12-dB maximum. Linux's AC97 codec
+implementation constructs these as Line/CD/Aux Playback controls and uses
+its db_scale_5bit_12db_max table (-34.5 dB through +12 dB):
+https://github.com/torvalds/linux/blob/master/sound/pci/ac97/ac97_codec.c
+Revised mapping: InputSourceLevel=50 maps exactly to the original $0808
+value. The software uses only the symmetric -12..+12 dB range, with 0
+reserved for mute; hardware step resolution remains 1.5 dB.
+
+Test 2 does not add another memory-lifetime API. It uses the working
+playback backend's existing MapRAM/MakeSelector/FreeRAM ownership and
+expands its single driver-load mapping to cover the additional capture
+ring. No Win16 shutdown ordering claim is inferred solely from the GPF.
+
+AUD1SET additions
+-----------------
+The same capture DMA engine/rate controls remain in use. Source/gain
+changes now have a bounded resident route-only helper: no ADCBA/ADCBS/
+ADCCR/index reset, ring clearing or client header manipulation.
+Digital CD uses A_EXTIN_SPDIF_CD 02h/03h plus the40h Audigy input base;
+AudigyDrive S/PDIF uses A_EXTIN_OPT_SPDIF04h/05h plus40h. These constants
+are in the already-pinned EMU10K1.H reference and ALSA's public header.
+Capture DSP instructions8/9 and gains12/13 remain independent of playback.
+No raw S/PDIF bitstream bypass engine was introduced in AUD1SET.
+
+AUD1MIX Wave / duplex addition - 27 October 2026
+---------------------------------------------------
+Front stereo PCM plus existing physical monitor contribution is rendered
+once into DSP GPR424/425. ACC3 copies feed digital and analog front outputs;
+capture instructions8/9 select these GPRs for source6 (Wave).
+Rear copies are not summed again. The existing ADC DMA/rate/format engine
+receives that DSP signal; playback voice DMA remains independent.
+Monitor source remains a physical input, preventing a DSP feedback route.
+Reference: ALSA emufx.c, commit906dde0f355bd97c080c215811ae7db1137c4af8,
+blob a2b56b188be4d90d9c51547e5fd8a7013700b14f, inspected27October2026.
+https://kernel.googlesource.com/pub/scm/linux/kernel/git/torvalds/linux/+/906dde0f355bd97c080c215811ae7db1137c4af8/sound/pci/emu10k1/emufx.c
+Its ADC output routing and EMU10K1_CAPTURE_DIGITAL_OUT path confirm that
+DSP playback/stereo mixes can feed the standard capture outputs. ACC3
+copies avoid an extra multiply when presenting the same sum to outputs.
+New feature remains target-untested; existing notices and license files
+remain unchanged. No new whole-project licensing conclusion is made.
+
+AUD1MIX3 revision - 27 October 2026
+---------------------------------
+User-tested MIX2 captured correctly but post-PCM-volume recording was quiet.
+By explicit user request, source6 now captures raw PCM FX buses0/1 through
+the existing capture gain/ADC outputs; PCM volume no longer affects it.
+The user also requested Wave to uncheck/disable Monitor input.
+Load/Apply/hardware/AUX enforce monitoring OFF for source6, so external
+monitor contributions are no longer included. Speaker DSP instructions
+and the corrected MIX2 startup readbacks are unchanged. No new code from
+external projects was introduced for this revision.
